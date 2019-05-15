@@ -1,6 +1,9 @@
 import torch.nn as nn
-import torch.nn.functional as F
+# import torch.nn.functional as F
 import torch
+import timeit
+import cv2 
+import numpy as np
 
 
 class LSTM_PM(nn.Module):
@@ -62,12 +65,12 @@ class LSTM_PM(nn.Module):
         :param image: 3 * 368 * 368
         :return: initial_heatmap out_class * 45 * 45
         '''
-        x = self.pool1_convnet1(F.relu(self.conv1_convnet1(image)))  # output 128 * 184 * 184
-        x = self.pool2_convnet1(F.relu(self.conv2_convnet1(x)))  # output 128 * 92 * 92
-        x = self.pool3_convnet1(F.relu(self.conv3_convnet1(x)))  # output 128 * 45 * 45
-        x = F.relu(self.conv4_convnet1(x))  # output 32 * 45 * 45
-        x = F.relu(self.conv5_convnet1(x))  # output 512 * 45 * 45
-        x = F.relu(self.conv6_convnet1(x))  # output 512 * 45 * 45
+        x = self.pool1_convnet1(torch.relu(self.conv1_convnet1(image)))  # output 128 * 184 * 184
+        x = self.pool2_convnet1(torch.relu(self.conv2_convnet1(x)))  # output 128 * 92 * 92
+        x = self.pool3_convnet1(torch.relu(self.conv3_convnet1(x)))  # output 128 * 45 * 45
+        x = torch.relu(self.conv4_convnet1(x))  # output 32 * 45 * 45
+        x = torch.relu(self.conv5_convnet1(x))  # output 512 * 45 * 45
+        x = torch.relu(self.conv6_convnet1(x))  # output 512 * 45 * 45
         initial_heatmap = self.conv7_convnet1(x)  # output (class + 1) * 45 * 45
         return initial_heatmap
 
@@ -76,10 +79,10 @@ class LSTM_PM(nn.Module):
         :param image: 3 * 368 * 368
         :return: Fs(.) features 32 * 45 * 45
         '''
-        x = self.pool1_convnet2(F.relu(self.conv1_convnet2(image)))  # output 128 * 184 * 184
-        x = self.pool2_convnet2(F.relu(self.conv2_convnet2(x)))  # output 128 * 92 * 92
-        x = self.pool3_convnet2(F.relu(self.conv3_convnet2(x)))  # output 128 * 45 * 45
-        x = F.relu(self.conv4_convnet2(x))  # output 32 * 45 * 45
+        x = self.pool1_convnet2(torch.relu(self.conv1_convnet2(image)))  # output 128 * 184 * 184
+        x = self.pool2_convnet2(torch.relu(self.conv2_convnet2(x)))  # output 128 * 92 * 92
+        x = self.pool3_convnet2(torch.relu(self.conv3_convnet2(x)))  # output 128 * 45 * 45
+        x = torch.relu(self.conv4_convnet2(x))  # output 32 * 45 * 45
         return x  # output 32 * 45 * 45
 
     def convnet3(self, hide_t):
@@ -87,10 +90,10 @@ class LSTM_PM(nn.Module):
         :param h_t: 48 * 45 * 45
         :return: heatmap   out_class * 45 * 45
         """
-        x = F.relu(self.Mconv1_convnet3(hide_t))  # output 128 * 45 * 45
-        x = F.relu(self.Mconv2_convnet3(x))  # output 128 * 45 * 45
-        x = F.relu(self.Mconv3_convnet3(x))  # output 128 * 45 * 45
-        x = F.relu(self.Mconv4_convnet3(x))  # output 128 * 45 * 45
+        x = torch.relu(self.Mconv1_convnet3(hide_t))  # output 128 * 45 * 45
+        x = torch.relu(self.Mconv2_convnet3(x))  # output 128 * 45 * 45
+        x = torch.relu(self.Mconv3_convnet3(x))  # output 128 * 45 * 45
+        x = torch.relu(self.Mconv4_convnet3(x))  # output 128 * 45 * 45
         x = self.Mconv5_convnet3(x)  # output (class+1) * 45 * 45
         return x  # heatmap (class+1) * 45 * 45
 
@@ -110,25 +113,25 @@ class LSTM_PM(nn.Module):
         gx = self.conv_gx_lstm(xt)  # output: 48 * 45 * 45
         gh = self.conv_gh_lstm(hide_t_1)  # output: 48 * 45 * 45
         g_sum = gx + gh
-        gt = F.tanh(g_sum)
+        gt = torch.tanh(g_sum)
 
         ox = self.conv_ox_lstm(xt)  # output: 48 * 45 * 45
         oh = self.conv_oh_lstm(hide_t_1)  # output: 48 * 45 * 45
         o_sum = ox + oh
-        ot = F.sigmoid(o_sum)
+        ot = torch.sigmoid(o_sum)
 
         ix = self.conv_ix_lstm(xt)  # output: 48 * 45 * 45
         ih = self.conv_ih_lstm(hide_t_1)  # output: 48 * 45 * 45
         i_sum = ix + ih
-        it = F.sigmoid(i_sum)
+        it = torch.sigmoid(i_sum)
 
         fx = self.conv_fx_lstm(xt)  # output: 48 * 45 * 45
         fh = self.conv_fh_lstm(hide_t_1)  # output: 48 * 45 * 45
         f_sum = fx + fh
-        ft = F.sigmoid(f_sum)
+        ft = torch.sigmoid(f_sum)
 
         cell_t = ft * cell_t_1 + it * gt
-        hide_t = ot * F.tanh(cell_t)
+        hide_t = ot * torch.tanh(cell_t)
 
         return cell_t, hide_t
 
@@ -137,11 +140,11 @@ class LSTM_PM(nn.Module):
         ix = self.conv_ix_lstm0(x)
         ox = self.conv_ox_lstm0(x)
 
-        gx = F.tanh(gx)
-        ix = F.sigmoid(ix)
-        ox = F.sigmoid(ox)
+        gx = torch.tanh(gx)
+        ix = torch.sigmoid(ix)
+        ox = torch.sigmoid(ox)
 
-        cell1 = F.tanh(gx * ix)
+        cell1 = torch.tanh(gx * ix)
         hide_1 = ox * cell1
         return cell1, hide_1
 
@@ -206,10 +209,24 @@ class LSTM_PM(nn.Module):
 
 # test case
 if __name__ == '__main__':
+    img = cv2.imread('L0455.jpg')
+    img = img.transpose(2,0,1)
+    img = np.vstack((img,img,img,img))
+    img = (torch.from_numpy(np.expand_dims(img,0))).float().cuda(0)
+    # start = timeit.timeit()
     net = LSTM_PM(T=4)
-    a = torch.randn(2, 12, 368, 368)  # batch size = 2
-    c = torch.randn(2, 1, 368, 368)
-    maps = net(a, c)
+    net = net.cuda(0)
+    a = (torch.randn(1, 12, 368, 368)).cuda(0)  # batch size = 1
+    c = (torch.randn(1, 1, 256, 256)).cuda(0)
+    print(c.type(),(img.float()).type())
+    maps = net(img, c)
     for m in maps:
-       print m.shape
+       print(m.shape)
+    # a = (torch.randn(1, 12, 368, 368))  # batch size = 1
+    # c = (torch.randn(1, 1, 368, 368))
 
+    # maps = net(a, c)
+    # for m in maps:
+    #    print(m.shape)
+    # end = timeit.timeit()
+    # print(end-start)

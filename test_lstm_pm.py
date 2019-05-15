@@ -2,7 +2,7 @@
 from data.handpose_data2 import UCIHandPoseDataset
 from model.lstm_pm import LSTM_PM
 from src.utils import *
-
+# from __future__ import print_function
 import argparse
 import pandas as pd
 import os
@@ -25,13 +25,13 @@ args = parser.parse_args()
 
 # hyper parameter
 temporal = 5
-test_data_dir = '/mnt/data/haoyum/UCIHand/test/test_data'
-test_label_dir = '/mnt/data/haoyum/UCIHand/test/test_label'
+test_data_dir = './dataset/train_data'
+test_label_dir = './dataset/train_label'
 model_epo = [10, 15, 20, 25, 30, 35, 40, 45, 50]
 
 # load data
 test_data = UCIHandPoseDataset(data_dir=test_data_dir, label_dir=test_label_dir, temporal=temporal, train=False)
-print 'Test  dataset total number of images sequence is ----' + str(len(test_data))
+print('Test  dataset total number of images sequence is ----' + str(len(test_data)))
 test_dataset = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
 
 
@@ -40,7 +40,7 @@ def load_model(model):
     net = LSTM_PM(T=temporal)
     if torch.cuda.is_available():
         net = net.cuda()
-        net = nn.DataParallel(net)  # multi-Gpu
+        # net = nn.DataParallel(net)  # multi-Gpu
 
     save_path = os.path.join('ckpt/ucihand_lstm_pm' + str(model)+'.pth')
     state_dict = torch.load(save_path)
@@ -59,7 +59,7 @@ def load_model(model):
 # **************************************** test all images ****************************************
 
 
-print '********* test data *********'
+print('********* test data *********')
 
 for model in model_epo:
 
@@ -89,16 +89,16 @@ for model in model_epo:
             pck_all.append(pck)
 
             if step % 100 == 0:
-                print '--step ...' + str(step)
-                print '--pck.....' + str(pck)
+                print('--step ...' + str(step))
+                print('--pck.....' + str(pck))
                 save_images(label_map, predict_heatmaps, step, epoch=-1, imgs=imgs, train=False, temporal=temporal,pck=pck)
 
 
             if pck < 0.8:
                 save_images(label_map, predict_heatmaps, step, epoch=-1, imgs=imgs, train=False, temporal=temporal,pck=pck)
 
-        print 'sigma ==========> ' + str(sigma)
-        print '===PCK evaluation in test dataset is ' + str(sum(pck_all) / len(pck_all))
+        print('sigma ==========> ' + str(sigma))
+        print('===PCK evaluation in test dataset is ' + str(sum(pck_all) / len(pck_all)))
         result.append(str(sum(pck_all) / len(pck_all)))
         results.append(result)
 

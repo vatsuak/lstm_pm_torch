@@ -34,12 +34,12 @@ def save_loss(predict_heatmaps, label_map, epoch, step, criterion, train, tempor
     if train is True:
         if not os.path.exists(save_dir + 'loss_epoch' + str(epoch)):
             os.mkdir(save_dir + 'loss_epoch' + str(epoch))
-        json.dump(loss_save, open(save_dir + 'loss_epoch' + str(epoch) + '/s' + str(step).zfill(4) + '.json', 'wb'))
+        json.dump(loss_save, open(save_dir + 'loss_epoch' + str(epoch) + '/s' + str(step).zfill(4) + '.json', 'w', encoding="utf8"))
 
     else:
         if not os.path.exists(save_dir + 'loss_test/'):
             os.mkdir(save_dir + 'loss_test/')
-        json.dump(loss_save, open(save_dir + 'loss_test/' + str(step).zfill(4) + '.json', 'wb'))
+        json.dump(loss_save, open(save_dir + 'loss_test/' + str(step).zfill(4) + '.json', 'w', encoding="utf8"))
 
     return total_loss
 
@@ -66,8 +66,8 @@ def save_images(label_map, predict_heatmaps, step, epoch, imgs, train, pck=1, te
             pre = np.zeros((45, 45))  #
             gth = np.zeros((45, 45))
             for i in range(21):                             # for each joint
-                pre += np.asarray(predict_heatmaps[t][b, i, :, :].data)  # 2D
-                gth += np.asarray(label_map[b, t, i, :, :].data)         # 2D
+                pre += np.asarray((predict_heatmaps[t][b, i, :, :].data).cpu())  # 2D
+                gth += np.asarray((label_map[b, t, i, :, :].data).cpu())        # 2D
 
             output[0:45,  50 * t: 50 * t + 45] = gth
             output[50:95, 50 * t: 50 * t + 45] = pre
@@ -89,8 +89,8 @@ def lstm_pm_evaluation(label_map, predict_heatmaps, sigma=0.04, temporal=5):
     empty = np.zeros((21, 45, 45))                                      # 3D numpy 21 * 45 * 45
     for b in range(label_map.shape[0]):        # for each batch (person)
         for t in range(temporal):           # for each temporal
-            target = np.asarray(label_map[b, t, :, :, :].data)          # 3D numpy 21 * 45 * 45
-            predict = np.asarray(predict_heatmaps[t][b, :, :, :].data)  # 3D numpy 21 * 45 * 45
+            target = np.asarray((label_map[b, t, :, :, :].data).cpu())          # 3D numpy 21 * 45 * 45
+            predict = np.asarray((predict_heatmaps[t][b, :, :, :].data).cpu())  # 3D numpy 21 * 45 * 45
             if not np.equal(empty, target).all():
                 pck_eval.append(PCK(predict, target, sigma=sigma))
 
@@ -185,7 +185,7 @@ def Tests_save_label_imgs(label_map, predict_heatmaps, step, imgs, temporal=13, 
         # calculate average PCK
         # print pck_dict
         avg_pck = sum(pck_dict.values()) / float(pck_dict.__len__())
-        print 'step ...%d ... PCK %f  ....' % (step, avg_pck)
+        print('step ...%d ... PCK %f  ....' % (step, avg_pck))
 
         # ****************** save image ******************
         if not os.path.exists(save_dir + 'test'):
