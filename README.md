@@ -1,4 +1,4 @@
-#Implementation of LSTM Pose Machines with Pytorch(revised version)
+# Implementation of LSTM Pose Machines with Pytorch(revised version)
 
 This is pytorch implement of [LSTM Pose Machines](https://arxiv.org/pdf/1712.06316.pdf)
 
