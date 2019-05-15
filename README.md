@@ -1,9 +1,8 @@
-# lstm_pm_pytorch (revised version) Implementation of LSTM Pose Machines with Pytorch
+#Implementation of LSTM Pose Machines with Pytorch(revised version)
 
 This is pytorch implement of [LSTM Pose Machines](https://arxiv.org/pdf/1712.06316.pdf)
 
-Please note that this model is used for my own datasets. But the architecture and training are very close to the original model, please feel free to use it for your own project.
-
+Note: Uses a custom dataset as per the original uploader. 
 
 
 ## Prerequisites
