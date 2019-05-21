@@ -68,12 +68,12 @@ for model in model_epo:
 
     sigma = 0.01
     results = []
-    for i in range(5):
+    for i in range(5): #going over the sigmas
 
         result = []  # save sigma and pck
         result.append(sigma)
         pck_all = []
-        for step, (images, label_map, center_map, imgs) in enumerate(test_dataset):
+        for step, (images, label_map, center_map, imgs) in enumerate(test_dataset):# going over the temporal data
 
             images = Variable(images.cuda() if args.cuda else images)           # 4D Tensor
             # Batch_size  *  (temporal * 3)  *  width(368)  *  height(368)
